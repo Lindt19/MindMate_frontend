@@ -1,6 +1,7 @@
 import React from "react";
 import Swal from 'sweetalert';
 import {ClapSpinner} from 'react-spinners-kit';
+import Chart from 'chart.js';
 
 import {
     CHATBOT_URL,
@@ -8,6 +9,7 @@ import {
     computeDashboard,
     getTime, getTopSentences,
     hideDetail,
+    hideInsights,
     hideEssayField,
     hideFeedback,
     hideHelp,
@@ -24,6 +26,10 @@ import {
     showPrivacy,
     submitMessage
 } from "../static/javascript/ArgueTutorEn";
+
+import { v4 as uuidv4 } from 'uuid'
+
+const UUID = uuidv4()
 
 class MainFrameEn extends React.Component {
 
@@ -42,7 +48,7 @@ class MainFrameEn extends React.Component {
         window.chatSuggest = function (text) {
             that.setState({wasQuestion: true},
 
-                () => chatSuggestCall(that, that.state.chatGPTColor, text)
+                () => chatSuggestCall(that, that.state.chatGPTColor, text, UUID)
             );
         }
 
@@ -139,7 +145,8 @@ class MainFrameEn extends React.Component {
             dashboardText: '',
             ascPolSentences: [[]],
             ascSubSentences: [[]],
-            chatGPTColor: false
+            chatGPTColor: false,
+            chartData: [90, 90, 90, 90, 90, 90, 90]
         };
 
         /**
@@ -174,6 +181,7 @@ class MainFrameEn extends React.Component {
         document.getElementById("show-dashboard-button").style.display = 'none';
         document.getElementById("open-feedback-button").style.display = 'none';
         document.getElementById("open-Detail-button").style.display = 'none';
+        document.getElementById("open-insights-button").style.display = 'none';
         document.getElementById("open-help-button").style.display = 'none';
         document.getElementById("close-essay-field-button").style.display = '';
         document.getElementById("scrollbox").style.display = 'none';
@@ -291,7 +299,7 @@ class MainFrameEn extends React.Component {
         }
          */
         await this.setState({chatGPTColor: !this.state.chatGPTColor})
-        initializeBot(this.updateChatBoxContent, this.state.chatGPTColor)
+        initializeBot(this.updateChatBoxContent, this.state.chatGPTColor, UUID)
     }
 
 
@@ -382,7 +390,7 @@ class MainFrameEn extends React.Component {
             // added this, so that the scrollbox height is adjusted to the correct spot since the last one is still at the height of the
             // last question if we clicked on "textfeld öffnen"
             this.setState({wasQuestion: true},
-                () => submitMessage(text, this.state.chatGPTColor, this.updateChatBoxContent))
+                () => submitMessage(text, this.state.chatGPTColor, this.updateChatBoxContent, UUID))
         }
 
         /**
@@ -419,6 +427,7 @@ class MainFrameEn extends React.Component {
         const hideChat = () => {
             document.getElementById("open-feedback-button").style.display = 'none';
             document.getElementById("open-Detail-button").style.display = 'none';
+            document.getElementById("open-insights-button").style.display = 'none';
             document.getElementById("open-help-button").style.display = 'none';
             document.getElementById("scrollbox").style.display = 'none';
             document.getElementById("userInput").style.display = 'none';
@@ -516,6 +525,21 @@ class MainFrameEn extends React.Component {
         const closeDetailButtonClick = () => {
             hideDetail();
         }
+        /**
+         * handles detail button click (FAQ)
+         */
+        const insightsButtonClick = () => {
+            hideChat();
+
+            document.getElementById("close-insights-button").style.display = '';
+        }
+
+        /**
+         * handels close Detail (FAQ) button click
+         */
+        const closeInsightsButtonClick = () => {
+            hideInsights();
+        }
 
         /**
          * handles close essay button click
@@ -538,6 +562,7 @@ class MainFrameEn extends React.Component {
         const feedbackButtonClick = () => {
             document.getElementById("open-help-button").style.display = 'none';
             document.getElementById("open-Detail-button").style.display = 'none';
+            document.getElementById("open-insights-button").style.display = 'none';
             document.getElementById("scrollbox").style.display = 'none';
             document.getElementById("userInput").style.display = 'none';
 
@@ -621,37 +646,59 @@ class MainFrameEn extends React.Component {
         /**
          * Sends evaluation request to the backend and then displays the corresponding Dashboard with the results
          */
-        // todo create evaluation method for chatGPT
         const evaluationChatSuggest = () => {
-            let intro = document.getElementById("evalution_textarea").value;
-            let body = document.getElementById("evalution_textarea2").value;
-            let conclusion = document.getElementById("evalution_textarea3").value;
-            let submittedText = `${intro} ${body} ${conclusion}` //text1 + " " + text2 + " " + text3;
+            let context = document.getElementById("evalution_textarea").value;
+            let emotions = document.getElementById("evalution_textarea2").value;
+            let analysis = document.getElementById("evalution_textarea3").value;
+            let evaluation = document.getElementById("evalution_textarea4").value;
+            let plan = document.getElementById("evalution_textarea5").value;
 
-            if (intro.trim().length === 0) {
+            let submittedText = `${context} ${emotions} ${analysis} ${evaluation} ${plan}` //text1 + " " + text2 + " " + text3;
+
+            if (context.trim().length === 0) {
                 Swal({
-                    title: 'Empty introduction!',
-                    text: 'Please write a text about 200 words',
+                    title: 'Empty context text!',
+                    text: 'Please write a text about 200 words in the first box',
                     icon: 'error',
                     confirmButtonText: 'Next',
                     confirmButtonColor: '#00762C'
                 })
                 return;
             }
-            if (body.trim().length === 0) {
+            if (emotions.trim().length === 0) {
                 Swal({
-                    title: 'Empty body!',
-                    text: 'Please write a text about 200 words',
+                    title: 'Empty emotions text!',
+                    text: 'Please write a text about 200 words in the second box',
                     icon: 'error',
                     confirmButtonText: 'Next',
                     confirmButtonColor: '#00762C'
                 })
                 return;
             }
-            if (intro.trim().length === 0) {
+            if (analysis.trim().length === 0) {
                 Swal({
-                    title: 'Empty conclusion!',
-                    text: 'Please write a text about 200 words',
+                    title: 'Empty analysis!',
+                    text: 'Please write a text about 200 words in the third box',
+                    icon: 'error',
+                    confirmButtonText: 'Next',
+                    confirmButtonColor: '#00762C'
+                })
+                return;
+            }
+            if (evaluation.trim().length === 0) {
+                Swal({
+                    title: 'Empty evaluation text!',
+                    text: 'Please write a text about 200 words in the fourth box',
+                    icon: 'error',
+                    confirmButtonText: 'Next',
+                    confirmButtonColor: '#00762C'
+                })
+                return;
+            }
+            if (plan.trim().length === 0) {
+                Swal({
+                    title: 'Empty plan text!',
+                    text: 'Please write a text about 200 words in the fifth box',
                     icon: 'error',
                     confirmButtonText: 'Next',
                     confirmButtonColor: '#00762C'
@@ -668,9 +715,11 @@ class MainFrameEn extends React.Component {
 
             let _data = {
                 text: submittedText,
-                intro: intro,
-                body: body,
-                conclusion: conclusion
+                context: context,
+                emotions: emotions,
+                analysis: analysis,
+                evaluation: evaluation,
+                plan: plan
             }
 
             // Used to signal to the user if there is a massive evaluation delay
@@ -690,58 +739,236 @@ class MainFrameEn extends React.Component {
             ).then(response => response.json()
             ).then(data => {
 
-                let subjectivity = data.subjectivity;
-                let polarity = data.polarity;
-                let subjectivity_intro = data.subjectivity_intro;
-                let polarity_intro = data.polarity_intro;
-                let subjectivity_body = data.subjectivity_body;
-                let polarity_body = data.polarity_body;
-                let subjectivity_conclusion = data.subjectivity_conclusion;
-                let polarity_conclusion = data.polarity_conclusion;
-                let summary = data.summary;
-                let text = data.text;
-                let sent_polarities = data.pol_per_sentence;
-                let sent_subjectivities = data.sub_per_sentence;
+                let context_past_tense =  data.context_past_tense;
+                let context_presence_of_named_entity = data.context_presence_of_named_entity;
                 let emotions = data.emotions;
-                let pronouns = data.first_person_count;
-                let future_conclusion = data.future_conclusion;
-                let past_intro = data.past_intro;
+                let analysis_polarity = data.analysis_polarity;
+                let analysis_subjectivity = data.analysis_subjectivity;
+                let analysis_causal_keywords = data.analysis_causal_keywords;
+                let evaluation_polarity = data.evaluation_polarity;
+                let evaluation_subjectivity = data.evaluation_subjectivity;
+                let plan_future_tense = data.plan_future_tense;
+                let text = data.text;
+                let first_person_count = data.first_person_count;
 
+                // Create the chart
+                //this.setState({chartData: emotions.map(e => Math.round(Number((e.score * 100))))});
+                var chart = document.getElementById('chart');
+                new Chart(chart, {
+                    type: 'pie',
+                    data: {
+                        labels: emotions.map(e => e.label), // Replace with your own labels
+                        datasets: [{
+                            data: emotions.map(e => Math.round(Number((e.score * 100)))), // Replace with your own data values
+                            backgroundColor: ['lightcoral', 'lightgreen', 'lightsalmon', 'lightcyan', 'lightgrey', 'lightyellow', 'lightpink'], // Replace with your own colors
+                        }]
+                    }
+                });
+
+                let neutral_score = emotions.filter(e => e.label == "neutral")[0].score * 100
+                if(neutral_score >= 35){
+                    document.getElementById("emotions_text").innerHTML = "It seems that you expressed emotions in a neutral way. Try to be more explicit in the feelings you had during the experience"
+                }
+                else{
+                    document.getElementById("emotions_text").innerHTML = "It seems that you have described some emotions. This helps you have an idea on how this experience impacted and thus enable good reflection."
+                }
+                /*
                 for (let i = 0; i < emotions.length; i++) {
                     const score = (emotions[i].score * 100).toFixed(2);
                     document.getElementById(emotions[i].label).value = score;
                     document.getElementById(emotions[i].label).title = "On a scale from not at all appropriate (0%) to very appropriate (100%), this text is: " + score + "%";
                 }
+                 */
+
                 let adaptedText = text.replaceAll("\\n", "\n");
+                if(context_past_tense <= 0){
+                    document.getElementById("context_past_tense").innerHTML = "You should use the past tense while describing the context.";
+                }
+                else {
+                    document.getElementById("context_past_tense").innerHTML = "Good ! It seems that you used the past tense which a sign of describing the context.";
+                }
+                if(context_presence_of_named_entity.length == 0){
+                    document.getElementById("context_named_entities").innerHTML = "It seems that you didn't mention a place, date or people in the context. This can be because you didn't use appelations. Otherwise try to describe better the context.";
+                }
+                else{
+                    document.getElementById("context_named_entities").innerHTML = "It seems that you mentioned a place, date or people which a sign of describing the context. Good job !";
+                }
 
-                let sentences = text.split(/[.!?]+/g)
+                document.getElementById("subjectivityBar_analysis").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + analysis_subjectivity.toFixed(2) + "%";
+                document.getElementById("subjectivityBar_analysis").value = analysis_subjectivity * 100;
+                document.getElementById("polarityBar_analysis").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + analysis_polarity.toFixed(2) + "%";
+                document.getElementById("polarityBar_analysis").value = analysis_polarity * 100;
+                // Causality
+                if(analysis_causal_keywords <= 0){
+                    document.getElementById("analysis_causal").innerHTML = "It seems that you didn't mention explicitly a cause and effect relationship. Otherwise try to anaylse better your experience.";
+                }
+                else{
+                    document.getElementById("analysis_causal").innerHTML = "It seems that you mentioned a cause and effect relationship. Good job !";
+                }
+                document.getElementById("subjectivityBar_evaluation").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + evaluation_subjectivity.toFixed(2) + "%";
+                document.getElementById("subjectivityBar_evaluation").value = evaluation_subjectivity * 100;
+                document.getElementById("polarityBar_evaluation").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + evaluation_polarity.toFixed(2) + "%";
+                document.getElementById("polarityBar_evaluation").value = evaluation_polarity * 100;
 
-                const subj = subjectivity * 100;
-                const pol = ((polarity / 2.0) + 0.5) * 100;
-                let wordCount = document.getElementById("wordCountDashboard").innerHTML;
-                const score = 0.4 * subjectivity + 0.2 * polarity + 0.2 * pronouns / wordCount; //TODO update this formula
-                console.log(score);
-                console.log(subjectivity);
-                console.log(polarity);
-
-                document.getElementById("subjectivityBar").value = subjectivity_intro;
-                document.getElementById("subjectivityBar").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + subjectivity_intro.toFixed(2) + "%";
-                document.getElementById("subjectivityBar2").value = subjectivity_body;
-                document.getElementById("subjectivityBar2").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + subjectivity_body.toFixed(2) + "%";
-                document.getElementById("polarityBar").value = polarity_body;
-                document.getElementById("polarityBar").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + pol.toFixed(2) + "%";
-                document.getElementById("polarityBar_2").value = polarity_conclusion;
-                document.getElementById("polarityBar_2").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + pol.toFixed(2) + "%";
-                document.getElementById("summary").innerText = summary;
-                document.getElementById("pronouns").innerText = pronouns;
-                document.getElementById("future_conclusion").innerText = future_conclusion;
-                document.getElementById("past_intro").innerText = past_intro;
-
+                if(plan_future_tense <= 0){
+                    document.getElementById("plan_future_tense").innerHTML = "You should use the future tense while describing the action plan.";
+                }
+                else {
+                    document.getElementById("plan_future_tense").innerHTML = "Good ! It seems that you used the future tense which a sign of describing an action plan.";
+                }
 
                 closeEssayButtonClick();
-                this.setState({dashboardIsComputed: true, dashboardText: adaptedText, ascPolSentences: sent_polarities, ascSubSentences: sent_subjectivities});
+                this.setState({dashboardIsComputed: true, dashboardText: adaptedText, ascPolSentences: 0, ascSubSentences: 0});
                 showDashboardStats(adaptedText);
-                computeDashboard(subjectivity_intro, subjectivity_body, polarity_body, polarity_conclusion, score, adaptedText, sentences, addOnClickToReloadPage, this.state);
+                computeDashboard(analysis_subjectivity,analysis_polarity,evaluation_subjectivity,evaluation_polarity, adaptedText, addOnClickToReloadPage, this.state)
+
+                let botHtml =
+                    `<div class="message">
+                        <div class="message-botname">MindMate</div>
+                        <div class="botText">
+                            <div class="avatar-wrapper">
+                                <img class="avatar" src="/img/ArgueTutor.png" alt="avatar">
+                            </div>
+                            <div class="data-wrapper">Feedback about your last essay has been generated. You can view it again by clicking on the dashboard button.</div>
+                        </div>
+                        <div class="message-time">` + getTime() + `</div>
+                    </div>
+                    `;
+                this.updateChatBoxContent(botHtml)
+                document.getElementById("loadingEvaluationAnimation").style.display = "none";
+
+                //     timeout and error handling
+            }).catch(() => {
+                document.getElementById("loadingEvaluationAnimation").style.display = "none";
+                closeEssayButtonClick();
+                closeDashboardButtonClick();
+                let botHtml =
+                    `<div class="message">
+                        <div class="message-botname">MindMate</div>
+                        <div class="botText">
+                            <div class="avatar-wrapper">
+                                <img class="avatar" alt="avatar">
+                            </div>
+                            <div class="data-wrapper">There was a mistake when generating feedback about your essay, I apologise. Please try again by refreshing the page.</div>
+                        </div>
+                        <div class="message-time">` + getTime() + `</div>
+                    </div>
+                    `;
+                this.setState({wasQuestion: true}, () => this.updateChatBoxContent(botHtml));
+            });
+        }
+
+        /**
+         * Sends evaluation request to the backend and then displays the corresponding Dashboard with the results
+         */
+        const evaluationChatSuggestInteractive = () => {
+            this.setState({wasQuestion: false});
+
+            document.getElementById("loadingEvaluationAnimation").style.display = "";
+            document.getElementById("close-essay-field-button").disabled = true;
+            document.getElementById("button-eval").disabled = true;
+
+            // Used to signal to the user if there is a massive evaluation delay
+            const timeout = new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Request timed out'));
+                }, 25000); // Timeout after 25 seconds
+            });
+            // use race method in order to check what happens first, response from the bot or timeout
+            Promise.race([fetch(CHATBOT_URL + "/evaluate", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json;charset=utf-8'
+                    },
+                    body: JSON.stringify({uuid: UUID})
+                }), timeout]
+            ).then(response => response.json()
+            ).then(data => {
+
+                let context_past_tense =  data.context_past_tense;
+                let context_presence_of_named_entity = data.context_presence_of_named_entity;
+                let emotions = data.emotions;
+                let analysis_polarity = data.analysis_polarity;
+                let analysis_subjectivity = data.analysis_subjectivity;
+                let analysis_causal_keywords = data.analysis_causal_keywords;
+                let evaluation_polarity = data.evaluation_polarity;
+                let evaluation_subjectivity = data.evaluation_subjectivity;
+                let plan_future_tense = data.plan_future_tense;
+                let text = data.text;
+                let first_person_count = data.first_person_count;
+
+                let adaptedText = text.replaceAll("\\n", "\n");
+                if(adaptedText.length <= 0){
+                    Swal({
+                        title: 'Empty text!',
+                        text: 'You can only get insights about your reflection after you have completed it.',
+                        icon: 'error',
+                        confirmButtonText: 'Next',
+                        confirmButtonColor: '#00762C'
+                    })
+                    return;
+                }
+
+                var chart = document.getElementById('chart');
+                new Chart(chart, {
+                    type: 'pie',
+                    data: {
+                        labels: emotions.map(e => e.label), // Replace with your own labels
+                        datasets: [{
+                            data: emotions.map(e => Math.round(Number((e.score * 100)))), // Replace with your own data values
+                            backgroundColor: ['lightcoral', 'lightgreen', 'lightsalmon', 'lightcyan', 'lightgrey', 'lightyellow', 'lightpink'], // Replace with your own colors
+                        }]
+                    }
+                });
+
+                let neutral_score = emotions.filter(e => e.label == "neutral")[0].score * 100
+                if(neutral_score >= 35){
+                    document.getElementById("emotions_text").innerHTML = "It seems that you expressed emotions in a neutral way. Try to be more explicit in the feelings you had during the experience"
+                }
+                else{
+                    document.getElementById("emotions_text").innerHTML = "It seems that you have described some emotions. This helps you have an idea on how this experience impacted and thus enable good reflection."
+                }
+
+                if(context_past_tense <= 0){
+                    document.getElementById("context_past_tense").innerHTML = "You should use the past tense while describing the context.";
+                }
+                else {
+                    document.getElementById("context_past_tense").innerHTML = "Good ! It seems that you used the past tense which a sign of describing the context.";
+                }
+                if(context_presence_of_named_entity.length == 0){
+                    document.getElementById("context_named_entities").innerHTML = "It seems that you didn't mention a place, date or people in the context. This can be because you didn't use appelations. Otherwise try to describe better the context.";
+                }
+                else{
+                    document.getElementById("context_named_entities").innerHTML = "It seems that you mentioned a place, date or people which a sign of describing the context. Good job !";
+                }
+
+                document.getElementById("subjectivityBar_analysis").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + analysis_subjectivity.toFixed(2) + "%";
+                document.getElementById("subjectivityBar_analysis").value = analysis_subjectivity  * 100;
+                document.getElementById("polarityBar_analysis").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + analysis_polarity.toFixed(2) + "%";
+                document.getElementById("polarityBar_analysis").value = analysis_polarity  * 100;
+                // Causality
+                if(analysis_causal_keywords <= 0){
+                    document.getElementById("analysis_causal").innerHTML = "It seems that you didn't mention explicitly a cause and effect relationship. Otherwise try to anaylse better your experience.";
+                }
+                else{
+                    document.getElementById("analysis_causal").innerHTML = "It seems that you mentioned a cause and effect relationship. Good job !";
+                }
+                document.getElementById("subjectivityBar_evaluation").title = "On a scale from very objective (0%) to very subjective (100%), this text is: " + evaluation_subjectivity.toFixed(2) + "%";
+                document.getElementById("subjectivityBar_evaluation").value = evaluation_subjectivity  * 100;
+                document.getElementById("polarityBar_evaluation").title = "On a scale from very negative (0%) to very positive (100%), this text is: " + evaluation_polarity.toFixed(2) + "%";
+                document.getElementById("polarityBar_evaluation").value = evaluation_polarity  * 100;
+
+                if(plan_future_tense <= 0){
+                    document.getElementById("plan_future_tense").innerHTML = "You should use the future tense while describing the action plan.";
+                }
+                else {
+                    document.getElementById("plan_future_tense").innerHTML = "Good ! It seems that you used the future tense which a sign of describing an action plan.";
+                }
+
+                closeEssayButtonClick();
+                this.setState({dashboardIsComputed: true, dashboardText: adaptedText, ascPolSentences: 0, ascSubSentences: 0});
+                showDashboardStats(adaptedText);
+                computeDashboard(analysis_subjectivity,analysis_polarity,evaluation_subjectivity,evaluation_polarity, adaptedText, addOnClickToReloadPage, this.state)
 
                 let botHtml =
                     `<div class="message">
@@ -803,7 +1030,19 @@ class MainFrameEn extends React.Component {
                         <div className="header-logo"/>
                         <div className="header-botname">MindMate</div>
                         <div className="header-button-bar">
-
+                            <button className="header-button" id="open-insights-button" onClick={evaluationChatSuggestInteractive}>
+                                <i className="fa fa-search"/>
+                                <span>Insights</span>
+                            </button>
+                            <button
+                                className="header-button"
+                                id="close-insights-button"
+                                style={{display: "none"}}
+                                onClick={closeInsightsButtonClick}
+                            >
+                                <i className="fa fa-times"/>
+                                <span>Insights</span>
+                            </button>
                             <button className="header-button" id="open-help-button" onClick={helpButtonClick}>
                                 <i className="fa fa-info"/>
                                 <span>Help</span>
@@ -884,10 +1123,14 @@ class MainFrameEn extends React.Component {
                                 onClick={() => this.showEssayField(this.state.dashboardIsComputed)}
                             >
                                 <i className="fa fa-book"/>
-                                <span>Static</span>
+                                <span>Reflect</span>
                             </button>
                         </div>
                     </div>
+                    <progress className={"progress blue-progress"} id="general_progress"
+                              title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                              max="100" value="0" style={{ height: "18px"}}>
+                    </progress>
                     <div id="scrollbox">
                         <div className="messagecontainer">
                             <div id="chatbox" dangerouslySetInnerHTML={this.state.chatBoxContent}/>
@@ -973,7 +1216,6 @@ class MainFrameEn extends React.Component {
                                             >
                                                 <div className="keywords" style={{marginRight: "-1rem"}}>
                                                     <h3>Top Keywords</h3>
-                                                    (Click on the words to highlight them in the text)
                                                     <ul id="topKeywordsDB"></ul>
                                                 </div>
                                             </div>
@@ -999,24 +1241,294 @@ class MainFrameEn extends React.Component {
                                                 <div className="col-md-12 text-center my-5">
                                                     {/* Evaluation section within the Dashboard */}
                                                     <h1 style={{borderTopStyle: "solid"}}>
-                                                        Evaluation feedback
+                                                        Feedback
                                                     </h1>
                                                     <div
                                                         className="container my-3"
                                                         style={{alignItems: "flex-start"}}
                                                     >
-                                                        <h4 className={"my-2"}>Generated summary</h4>
-                                                        <div id={"summary"}></div>
+                                                        <h4 className="my-2"> Context </h4>
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="context_past_tense"
+                                                        />
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="context_named_entities"
+                                                        />
+                                                        <h4 className="my-2"> Emotions </h4>
+                                                        <canvas id="chart" />
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="emotions_text"
+                                                        />
+                                                        {/*
+                                                        <progress className={"progress"} id="neutral"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
+                                                                  max="100" value="90"
+                                                                  style={{content:"hello"}}>
+                                                        </progress>
+                                                        <div className="progressbarText">{"Neutral"}</div>
 
-                                                        <h4 className={"my-2"}>First person pronouns number</h4>
-                                                        <div id={"pronouns"}></div>
+                                                        <progress className={"progress"} id="disgust"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Disgust"}</div>
 
-                                                        <h4 className={"my-2"}>Use of past tense in introduction</h4>
-                                                        <div id={"past_intro"}></div>
+                                                        <progress className={"progress"} id="sadness"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Sadness"}</div>
 
-                                                        <h4 className={"my-2"}>Use of future tense in conclusion</h4>
-                                                        <div id={"future_conclusion"}></div>
+                                                        <progress className={"progress"} id="fear"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Fear"}</div>
 
+                                                        <progress className={"progress"} id="anger"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Anger"}</div>
+
+                                                        <progress className={"progress"} id="surprise"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Surprise"}</div>
+
+                                                        <progress className={"progress"} id="joy"
+                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div className="progressbarText">{"Joy"}</div>
+                                                        */}
+                                                        <h4 className="my-2"> Analysis </h4>
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="analysis_sub_pol"
+                                                        >
+                                                            Analysis should be quite subjective and with a non neutral polarity. Here are the statistics for your text:
+                                                        </div>
+                                                        <h4 className="my-2"> Subjectivity/Objectivity of Analysis </h4>
+                                                        <progress className={"progress"} id="subjectivityBar_analysis"
+                                                                  title={"On a scale from very objective (0%) to very subjective (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div
+                                                            className="row w-100 text-center mx-auto mt-2"
+                                                            style={{marginBottom: 15}}
+                                                        >
+                                                            <div
+                                                                id="s1"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very Objective
+                                                            </div>
+                                                            <div
+                                                                id="s2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Objective
+                                                            </div>
+                                                            <div
+                                                                id="s3"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Neutral
+                                                            </div>
+                                                            <div
+                                                                id="s4"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Subjective
+                                                            </div>
+                                                            <div
+                                                                id="s5"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very subjective
+                                                            </div>
+                                                        </div>
+                                                        <a href={"javascript:void(0)"}
+                                                           onClick={showSubjectivitySources}> Most influential sentences for the
+                                                            Subjectivity decision? </a>
+
+                                                        <h4 className="my-2"> Polarity of Analysis </h4>
+                                                        <progress className={"progress"} id="polarityBar_analysis"
+                                                                  title={"On a scale from very negative (0%) to very positive (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div
+                                                            className="row w-100 text-center mx-auto mt-2"
+                                                            style={{marginBottom: 20}}
+                                                        >
+                                                            <div
+                                                                id="p1"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very Negative
+                                                            </div>
+                                                            <div
+                                                                id="p2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Negative
+                                                            </div>
+                                                            <div
+                                                                id="p3"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Neutral
+                                                            </div>
+                                                            <div
+                                                                id="p4"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Positive
+                                                            </div>
+                                                            <div
+                                                                id="p5"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very positive
+                                                            </div>
+                                                        </div>
+                                                        <a href={"javascript:void(0)"} onClick={showPolaritySources}> Most influential sentences for the polarity decision? </a>
+
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="analysis_causal"
+                                                        />
+                                                        <h4 className="my-2"> Evaluation </h4>
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="evaluation_sub_pol"
+                                                        >
+                                                            Evaluation should be quit subjective and with a non neutral polarity. Here are the statistics for your text:
+                                                        </div>
+                                                        <h4 className="my-2"> Subjectivity/Objectivity of Evaluation </h4>
+                                                        <progress className={"progress"} id="subjectivityBar_evaluation"
+                                                                  title={"On a scale from very objective (0%) to very subjective (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div
+                                                            className="row w-100 text-center mx-auto mt-2"
+                                                            style={{marginBottom: 15}}
+                                                        >
+                                                            <div
+                                                                id="s1_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very Objective
+                                                            </div>
+                                                            <div
+                                                                id="s2_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Objective
+                                                            </div>
+                                                            <div
+                                                                id="s3_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Neutral
+                                                            </div>
+                                                            <div
+                                                                id="s4_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Subjective
+                                                            </div>
+                                                            <div
+                                                                id="s5_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very subjective
+                                                            </div>
+                                                        </div>
+                                                        <a href={"javascript:void(0)"}
+                                                           onClick={showSubjectivitySources}> Most influential sentences for the
+                                                            Subjectivity decision? </a>
+
+                                                        <h4 className="my-2"> Polarity of Evaluation </h4>
+                                                        <progress className={"progress"} id="polarityBar_evaluation"
+                                                                  title={"On a scale from very negative (0%) to very positive (100%), this text is: "}
+                                                                  max="100" value="90">
+                                                        </progress>
+                                                        <div
+                                                            className="row w-100 text-center mx-auto mt-2"
+                                                            style={{marginBottom: 20}}
+                                                        >
+                                                            <div
+                                                                id="p1_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very Negative
+                                                            </div>
+                                                            <div
+                                                                id="p2_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Negative
+                                                            </div>
+                                                            <div
+                                                                id="p3_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Neutral
+                                                            </div>
+                                                            <div
+                                                                id="p4_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Positive
+                                                            </div>
+                                                            <div
+                                                                id="p5_2"
+                                                                className="col-md-2 border mx-auto"
+                                                                style={{borderRadius: 10, textAlign: "center"}}
+                                                            >
+                                                                Very positive
+                                                            </div>
+                                                        </div>
+                                                        <a href={"javascript:void(0)"} onClick={showPolaritySources}> Most influential sentences for the polarity decision? </a>
+
+                                                        <h4 className="my-2"> Action plan </h4>
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="plan_future_tense"
+                                                        />
+                                                        {/*
                                                         <h4 className="my-2"> Subjectivity/Objectivity of introduction </h4>
                                                         <progress className={"progress"} id="subjectivityBar"
                                                                   title={"On a scale from very objective (0%) to very subjective (100%), this text is: "}
@@ -1253,7 +1765,6 @@ class MainFrameEn extends React.Component {
                                                         </progress>
                                                         <div className="progressbarText">{"Joy"}</div>
                                                     </div>
-                                                    {/* Feedback on the text */}
                                                     <div className="container-fluid text-center cardtwo my-4">
                                                         <div
                                                             id="dashboard-h2 my-2"
@@ -1289,6 +1800,19 @@ class MainFrameEn extends React.Component {
                                                             style={{fontSize: "large", marginBottom: 30}}
                                                             id="writtenPolarity"
                                                         />
+                                                        <div
+                                                            id="dashboard-h2 my-2"
+                                                            style={{fontSize: "x-large"}}
+                                                        >
+                                                            {" "}
+                                                            Tenses and pronouns{" "}
+                                                        </div>
+                                                        <div
+                                                            className="text-black-50"
+                                                            style={{fontSize: "large", marginBottom: 30}}
+                                                            id="tenses_pronouns"
+                                                        />
+                                                        */}
                                                     </div>
                                                     {/* Reload page function - getting back to the introduction.  */}
                                                     <div className="container-fluid text-center">
@@ -1475,7 +1999,7 @@ class MainFrameEn extends React.Component {
                                 MindMate does not prescribe a learning process for you, but gives you
                                 the possibility to adapt your learning process according to your wishes. The
                                 buttons allow you to navigate easily through the different learning units.
-                                 This way you can use the MindMate in the way that suits you best. If you need
+                                This way you can use the MindMate in the way that suits you best. If you need
                                 need further support, you can always go to the help area.{" "}
                             </p>
                             <h4>How does the MindMate work?</h4>
@@ -1512,8 +2036,7 @@ class MainFrameEn extends React.Component {
                     <div id="ELEAIframeTemplate">
                         <form method="post" >
                             <label style={{display: "block", fontSize: "x-large"}}>
-                                Suggestion: Reflect on a recent accomplishment and explore the factors that contributed to your success.
-                                Divide your text in 3 sections: Description, Evaluation + Analysis and Conclusion.
+                                Enter your text the following boxes by trying to answer each question:
                             </label>
                             <div className="w3-display-left">
                                 <div className="ehi-wordcount-container">
@@ -1537,15 +2060,15 @@ class MainFrameEn extends React.Component {
                                         cols={25}
                                         name="evaluationText"
                                         id="evalution_textarea"
-                                        placeholder="What happened... ?"
-                                        onKeyUp={this.updateEssayStats}
+                                        placeholder="What is the context of the experience ?"
+                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
                                             boxShadow: "none",
                                             borderWidth: 0,
                                             backgroundColor: "#f4f4f4",
-                                            height: 350,
+                                            height: 150,
                                             marginBottom: "1rem",
                                             padding: "0.5rem"
                                         }}
@@ -1558,15 +2081,15 @@ class MainFrameEn extends React.Component {
                                         cols={25}
                                         name="evaluationText"
                                         id="evalution_textarea2"
-                                        placeholder="What were your feelings and went good/bad in the situation... ?"
-                                        onKeyUp={this.updateEssayStats}
+                                        placeholder="What were the emotions you felt during the experience ?"
+                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
                                             boxShadow: "none",
                                             borderWidth: 0,
                                             backgroundColor: "#f4f4f4",
-                                            height: 350,
+                                            height: 150,
                                             marginBottom: "1rem",
                                             padding: "0.5rem"
                                         }}
@@ -1579,15 +2102,57 @@ class MainFrameEn extends React.Component {
                                         cols={25}
                                         name="evaluationText"
                                         id="evalution_textarea3"
-                                        placeholder="What else could you have done and if the situation arose again what would you do... ?"
-                                        onKeyUp={this.updateEssayStats}
+                                        placeholder="What went well and what didn't ?"
+                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
                                             boxShadow: "none",
                                             borderWidth: 0,
                                             backgroundColor: "#f4f4f4",
-                                            height: 350,
+                                            height: 150,
+                                            marginBottom: "1rem",
+                                            padding: "0.5rem"
+                                        }}
+                                        defaultValue={""}
+                                    />
+                                    <textarea
+                                        spellCheck={true}
+                                        className="text"
+                                        rows={25}
+                                        cols={25}
+                                        name="evaluationText"
+                                        id="evalution_textarea4"
+                                        placeholder="What insights, skills, or knowledge you have gained from it ?"
+                                        //onKeyUp={this.updateEssayStats}
+                                        style={{
+                                            resize: "none",
+                                            borderRadius: 10,
+                                            boxShadow: "none",
+                                            borderWidth: 0,
+                                            backgroundColor: "#f4f4f4",
+                                            height: 150,
+                                            marginBottom: "1rem",
+                                            padding: "0.5rem"
+                                        }}
+                                        defaultValue={""}
+                                    />
+                                    <textarea
+                                        spellCheck={true}
+                                        className="text"
+                                        rows={25}
+                                        cols={25}
+                                        name="evaluationText"
+                                        id="evalution_textarea5"
+                                        placeholder="How can you apply what you have learned to future endeavors?"
+                                        //onKeyUp={this.updateEssayStats}
+                                        style={{
+                                            resize: "none",
+                                            borderRadius: 10,
+                                            boxShadow: "none",
+                                            borderWidth: 0,
+                                            backgroundColor: "#f4f4f4",
+                                            height: 150,
                                             marginBottom: "1rem",
                                             padding: "0.5rem"
                                         }}
@@ -1646,15 +2211,15 @@ class MainFrameEn extends React.Component {
 
                     {/* Header Buttons END */}
                     <div id="userInput">
-                        <input
+                        <textarea
                             id="textInput"
                             type="text"
                             name="msg"
                             placeholder="Type your question here..."
                             autoFocus
                             autoCorrect={true}
-                            onKeyUp={keyUpTextInput}
-                        />
+                            style={{ width: "750px", height: "70px" }}
+                            />
                         <button id="buttonInput" onClick={sendText}>
                             <i className="fa fa-arrow-right"/>
                         </button>

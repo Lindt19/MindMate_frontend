@@ -5,8 +5,8 @@
     --main-color:#1f8db5; /* light blue*/
     --gpt-color:#35BC55;
     --light-color: #d35656;
-    --avatar-image: url("/../img/mindMate.png");
-    --background-image: url("/../img/clouds.png");
+    --avatar-image: url("../../../public/img/mindMate.png");
+    --background-image: url("../../../public/img/clouds.png");
 }
 
 
@@ -202,11 +202,21 @@ h5 {
   height: 30px;
   box-sizing: border-box;
 }
+.progress::-webkit-progress-value {
+  background-color: lightseagreen; /* Change this to the desired color */
+}
+
+.progress::-moz-progress-bar {
+  background-color: lightcoral; /* Change this to the desired color */
+}
+
+.blue-progress::-webkit-progress-value {
+  background-color: steelblue;
+}
 
 .progress .progress-bar {
   height: 100%;
   width: 0%;
-  background-color: #05e35e;
   animation: fill-bar 3s infinite;
 }
 
