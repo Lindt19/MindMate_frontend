@@ -32,11 +32,8 @@ export {ready}
  */
 function initializeBot(updateChatBoxContent, gpt, UUID) {
     console.log(gpt)
-    if (gpt) {
-        getResponse("StartGPT", gpt, updateChatBoxContent, UUID);
-    } else {
-        getResponse("Introduction", gpt, updateChatBoxContent, UUID);
-    }
+    getResponse("Introduction", gpt, updateChatBoxContent, UUID);
+
 }
 export {initializeBot}
 
@@ -200,14 +197,7 @@ function getResponse(text, gpt, updateChatBoxContent, UUID) {
 }
 
 function getSmalltalkResponse(text, gpt, andThen, UUID) {
-    if (text.includes("joke") || text.includes("gag") || text.includes("wit") || text.includes("fun")) { // tell joke
-        //text = "joke";
-    }
-
     let response = getResponse(text, gpt, andThen, UUID);
-    // interrupt/smalltalk
-    if (evaluationRunning) {
-    }
     return response;
 }
 
@@ -702,10 +692,10 @@ function computeDashboard(analysis_subjectivity,analysis_polarity,evaluation_sub
     document.getElementById("close-dashboard-button").style.display = '';
 
     Swal({
-        title: 'Your Dashboard is ready!',
-        text: 'You can now view the analysis results. This is the last screen. To start the process again, you can scroll down and return to the introduction!',
+        title: 'Ihr Dashboard ist fertig!',
+        text: 'Sie können nun die Analyseergebnisse einsehen. Dies ist der letzte Bildschirm. Um den Prozess erneut zu starten, können Sie nach unten blättern und zur Einleitung zurückkehren!',
         icon: 'success',
-        confirmButtonText: 'Show results',
+        confirmButtonText: 'Ergebnisse anzeigen',
         confirmButtonColor: '#00762C'
     })
 }

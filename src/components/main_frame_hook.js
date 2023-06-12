@@ -94,6 +94,13 @@ const mainFrame = () => {
         }
 
         /**
+         * Switches to the essay-writing interface
+         */
+        window.displayFeedback = function () {
+            that.showEssayField(false);
+        }
+
+        /**
          * Highlights the 'keyWord' appearances in the text
          *
          * @param keyWord
