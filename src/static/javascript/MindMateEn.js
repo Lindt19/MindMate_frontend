@@ -3,9 +3,7 @@ import Swal from "sweetalert";
 
 let IDKcounter = 0;
 
-let evaluationRunning = false;
-
-const CHATBOT_URL = "http://127.0.0.1:8006";
+const CHATBOT_URL = "http://127.0.0.1:8080";
 export {CHATBOT_URL}
 
 
@@ -25,13 +23,15 @@ function ready(fn) {
 export {ready}
 
 /**
- * Initializes chatbot and gets first response
+ * Initializes chatbot, gets first response, and loads intro message
  *
  * @param updateChatBoxContent
  *          function that updates the chat box with the argument passed to it
  */
-function initializeBot(updateChatBoxContent) {
-    getFirstResponse(updateChatBoxContent);
+function initializeBot(updateChatBoxContent, gpt, UUID) {
+    console.log(gpt)
+    getResponse("Introduction", gpt, updateChatBoxContent, UUID);
+
 }
 export {initializeBot}
 
@@ -49,15 +49,6 @@ function getTime() {
 
 export {getTime}
 
-/**
- * Loads intro message
- *
- * @param updateChatBoxContent
- *          function that updates the chatbox with the given value passed as argument
- */
-function getFirstResponse(updateChatBoxContent) {
-    getResponse("Einführung", updateChatBoxContent);
-}
 
 /**
  * adds chatbot message to the chatbox
@@ -123,23 +114,23 @@ const EMAIL_RESULT = "E-Mail öffnen";
  * @param updateChatBoxContent
  *          method to update the chatbox with the bots response
  */
-function getBotResponse(text, updateChatBoxContent) {
+function getBotResponse(text, gpt, updateChatBoxContent, UUID) {
     text = text.toLowerCase(); // convert input text to lowercase
 
     // restart evaluation
     if (text.toLowerCase().includes("neustart")) {
-        getResponse("Einführung", updateChatBoxContent);
+        getResponse("Introduction", gpt, updateChatBoxContent, UUID);
         return;
     }
 
-    getSmalltalkResponse(text, (response) => {
+    getSmalltalkResponse(text, gpt, (response) => {
 
         if (response.includes("IDKresponse")) {
-            updateChatBoxContent(getIDKResponse(updateChatBoxContent));
+            updateChatBoxContent(getIDKResponse(gpt, updateChatBoxContent, UUID));
         } else {
             updateChatBoxContent(response);
         }
-    });
+    }, UUID);
 }
 
 
@@ -147,17 +138,22 @@ function getBotResponse(text, updateChatBoxContent) {
  * get response from python chatterbot backend and update the chatbox with the received answer
  * @param text
  *          request of the user
+ * @param gpt
+ *          boolean if chatgpt option is activated
  * @param updateChatBoxContent
  *          function to update the chatbox (takes the html response as parameter)
+ * @param UUID
+ *          unique id of the session
  * @returns {null}
  */
-function getResponse(text, updateChatBoxContent) {
-    fetch(CHATBOT_URL + "/getResponse?msg=" + text,
+function getResponse(text, gpt, updateChatBoxContent, UUID) {
+    fetch(CHATBOT_URL + "/getResponse",
         {
-            method: "GET",
+            method: "POST",
             headers: {
-                "Content-Type": "application/json;charset=UTF-8"
+                "Content-Type": "application/json"
             },
+            body: JSON.stringify({gpt: gpt, text: text, uuid: UUID})
         })
         .then(response => {
             return response.json()
@@ -165,28 +161,43 @@ function getResponse(text, updateChatBoxContent) {
         .then(data => {
             let botReply = data.botReply;
             addBotMessage(botReply, updateChatBoxContent);
+            let state = data.state;
+            if(state > 0){
+                // update progress bar
+                switch (state) {
+                    case 3:
+                        document.getElementById("general_progress").value = 20;
+                        return;
+                    case 4:
+                        document.getElementById("general_progress").value = 40;
+                        return;
+                    case 5:
+                        document.getElementById("general_progress").value = 60;
+                        return;
+                    case 6:
+                        document.getElementById("general_progress").value = 80;
+                        return;
+                    case 7:
+                        document.getElementById("general_progress").value = 100;
+                        document.getElementById("open-insights-button").style.display = '';
+                        return;
+                }
+            }
         });
 }
 
-function getSmalltalkResponse(text, andThen) {
-    if (text.includes("joke") || text.includes("gag") || text.includes("wit") || text.includes("fun")) { // tell joke
-        text = "Erzähl mir einen Witz";
-    }
-
-    let response = getResponse(text, andThen);
-    // interrupt/smalltalk
-    if (evaluationRunning) {
-    }
+function getSmalltalkResponse(text, gpt, andThen, UUID) {
+    let response = getResponse(text, gpt, andThen, UUID);
     return response;
 }
 
-function getIDKResponse(updateChatBoxContent) {
+function getIDKResponse(gpt, updateChatBoxContent, UUID) {
     IDKcounter++; // count IDK
     let botReply;
     if (IDKcounter < 2) {
-        botReply = getResponse(IDK_REPLY, updateChatBoxContent);
+        botReply = getResponse(IDK_REPLY, gpt, updateChatBoxContent, UUID);
     } else { // reply with email suggestion after 2 attempts
-        botReply = getResponse(EMAIL_RESULT, updateChatBoxContent);
+        botReply = getResponse(EMAIL_RESULT, gpt, updateChatBoxContent, UUID);
     }
     return botReply;
 }
@@ -199,7 +210,7 @@ function getIDKResponse(updateChatBoxContent) {
  * @param updateChatBoxContent
  *          method to update the chatbox content
  */
-function submitMessage(text, updateChatBoxContent) {
+function submitMessage(text, gpt, updateChatBoxContent, UUID) {
     if (text.trim() === "") {
         return;
     }
@@ -209,7 +220,7 @@ function submitMessage(text, updateChatBoxContent) {
     document.getElementById("buttonInput").disabled = true;
     document.getElementById("textInput").disabled = true;
 
-    getBotResponse(text, updateChatBoxContent);
+    getBotResponse(text, gpt, updateChatBoxContent, UUID);
 }
 
 export {submitMessage}
@@ -219,10 +230,11 @@ export {submitMessage}
  * show privacy window
  */
 function showPrivacy() {
-    document.querySelectorAll("#open-feedback-button, #open-help-button, #open-Detail-button").forEach(e => e.style.display = 'none');
+    document.querySelectorAll("#open-feedback-button, #open-help-button, #open-Detail-button, #open-insights-button, #general_progress").forEach(e => e.style.display = 'none');
     document.getElementById("feedback").style.display = 'none';
     document.getElementById("scrollbox").style.display = 'none';
     document.getElementById("userInput").style.display = 'none';
+    document.getElementById("chatgpt").style.display = 'none';
     document.getElementById("privacy").style.display = 'inline-block';
 }
 export {showPrivacy}
@@ -233,7 +245,7 @@ export {showPrivacy}
 function hidePrivacy() {
     document.getElementById("privacy").style.display = 'none';
 
-    document.querySelectorAll("#open-feedback-button, #open-help-button, #open-Detail-button")
+    document.querySelectorAll("#open-feedback-button, #open-help-button, #open-Detail-button, #general_progress")
         .forEach(e => e.style.display = '');
     document.getElementById("scrollbox").style.display = '';
     document.getElementById("userInput").style.display = '';
@@ -264,7 +276,6 @@ export {showCloseFeedbackButton}
 function hideFeedback() {
     document.getElementById("close-feedback-button").style.display = 'none';
     document.getElementById("feedback").style.display = 'none';
-
     document.getElementById("scrollbox").style.display = '';
     document.getElementById("userInput").style.display = '';
     document.getElementById("open-feedback-button").style.display = '';
@@ -274,6 +285,8 @@ function hideFeedback() {
 
 export {hideFeedback}
 
+
+
 /**
  * displays show detail (FAQ) interface
  */
@@ -281,11 +294,11 @@ function showDetail() {
     document.getElementById("open-feedback-button").style.display = 'none';
     document.getElementById("open-help-button").style.display = 'none';
     document.getElementById("open-Detail-button").style.display = 'none';
+    document.getElementById("open-insights-button").style.display = 'none';
     document.getElementById("scrollbox").style.display = 'none';
     document.getElementById("userInput").style.display = 'none';
     document.getElementById("dashboard").style.display = 'none';
     document.getElementById("close-dashboard-button").style.display = 'none';
-
     document.getElementById("close-Detail-button").style.display = '';
     document.getElementById("Detail").style.display = 'inline-block';
 }
@@ -298,7 +311,6 @@ export {showDetail}
 function hideDetail() {
     document.getElementById("Detail").style.display = 'none';
     document.getElementById("close-Detail-button").style.display = 'none';
-
     document.getElementById("open-feedback-button").style.display = '';
     document.getElementById("open-help-button").style.display = '';
     document.getElementById("open-Detail-button").style.display = '';
@@ -306,7 +318,19 @@ function hideDetail() {
     document.getElementById("userInput").style.display = '';
 }
 
-export {hideDetail}
+/**
+ * hides detail (FAQ) interface
+ */
+function hideInsights() {
+    document.getElementById("close-insights-button").style.display = 'none';
+    document.getElementById("open-feedback-button").style.display = '';
+    document.getElementById("open-help-button").style.display = '';
+    document.getElementById("open-Detail-button").style.display = '';
+    document.getElementById("scrollbox").style.display = '';
+    document.getElementById("userInput").style.display = '';
+}
+
+export {hideInsights, hideDetail}
 
 /**
  * hides essay interface
@@ -327,7 +351,6 @@ function showChat() {
     document.getElementById("open-help-button").style.display = '';
     document.getElementById("scrollbox").style.display = '';
     document.getElementById("userInput").style.display = '';
-    document.getElementById("open-essay-page").style.display = '';
 }
 export {showChat}
 
@@ -339,14 +362,14 @@ export {showChat}
  * @param text
  *          user message
  */
-function chatSuggestCall(chatBot, text) {
+function chatSuggestCall(chatBot, gpt, text, UUID) {
     const elems = document.getElementsByClassName('chatSuggest');
     for (const elem of elems) {
         elem.disabled = true
     }
 
     document.getElementById("textInput").value = text;
-    submitMessage(text, chatBot.updateChatBoxContent);
+    submitMessage(text, gpt, chatBot.updateChatBoxContent, UUID);
 }
 export {chatSuggestCall}
 
@@ -376,12 +399,24 @@ function clearDashboardBoxes() {
     document.getElementById("s4").style.backgroundColor = "";
     document.getElementById("s5").style.backgroundColor = "";
 
+    document.getElementById("s1_2").style.backgroundColor = "";
+    document.getElementById("s2_2").style.backgroundColor = "";
+    document.getElementById("s3_2").style.backgroundColor = "";
+    document.getElementById("s4_2").style.backgroundColor = "";
+    document.getElementById("s5_2").style.backgroundColor = "";
+
     //polarity
     document.getElementById("p1").style.backgroundColor = "";
     document.getElementById("p2").style.backgroundColor = "";
     document.getElementById("p3").style.backgroundColor = "";
     document.getElementById("p4").style.backgroundColor = "";
     document.getElementById("p5").style.backgroundColor = "";
+
+    document.getElementById("p1_2").style.backgroundColor = "";
+    document.getElementById("p2_2").style.backgroundColor = "";
+    document.getElementById("p3_2").style.backgroundColor = "";
+    document.getElementById("p4_2").style.backgroundColor = "";
+    document.getElementById("p5_2").style.backgroundColor = "";
 }
 
 
@@ -516,6 +551,7 @@ function highlightKeyword(text, keyword) {
 
 
     console.log(keyword)
+    // removes the first letter of the word and joins it in the end
     // words beginning with Umlauts cannot use the \b property in the RegExp since that doesn't support utf-8 characters
     if (word[0] === "ö" || word[0] === "Ö" || word[0] === "ä" || word[0] === "Ä" || word[0] === "ü" || word[0] === "Ü") {
         html = html.replace(new RegExp(word[0].toUpperCase() + word.slice(1), 'gu'), '</span><span class=\"annotation-0\">' + word[0].toUpperCase() + word.slice(1) + '</span>')
@@ -570,9 +606,11 @@ function addHighlighFunctionalityToTopKeywords(text, state) {
  * @param addOnClickToReloadPage
  * @param state
  */
-function computeDashboard(subjectivity, polarity, userText, sentences, addOnClickToReloadPage, state) {
-    let box = "s";
-    let box2 = "p";
+function computeDashboard(analysis_subjectivity,analysis_polarity,evaluation_subjectivity,evaluation_polarity, userText, addOnClickToReloadPage, state) {
+    let box_ana = "s";
+    let box_eva = "s";
+    let box2_ana = "p";
+    let box2_eva = "p";
 
     clearDashboardBoxes();
 
@@ -583,25 +621,41 @@ function computeDashboard(subjectivity, polarity, userText, sentences, addOnClic
 
     document.getElementById('userDashboardText').innerHTML = addHighlighFunctionalityToTopKeywords(userText, state);
 
-    if (0.0 <= subjectivity && subjectivity <= 0.2) box += "1";
-    if (0.2 < subjectivity && subjectivity <= 0.4) box += "2";
-    if (0.4 < subjectivity && subjectivity <= 0.6) box += "3";
-    if (0.6 < subjectivity && subjectivity <= 0.8) box += "4";
-    if (0.8 < subjectivity && subjectivity <= 1.0) box += "5";
-    document.getElementById(box).style.backgroundColor = "rgba(0,255, 0, 0.75)";
 
-    if (-1.0 <= polarity && polarity <= -0.6) box2 += "1";
-    if (-0.6 < polarity && polarity <= -0.2) box2 += "2";
-    if (-0.2 < polarity && polarity <= 0.2) box2 += "3";
-    if (0.2 < polarity && polarity <= 0.6) box2 += "4";
-    if (0.6 < polarity && polarity <= 1.0) box2 += "5";
+    if (0.0 <= analysis_subjectivity && analysis_subjectivity <= 0.2) box_ana += "1";
+    if (0.2 < analysis_subjectivity && analysis_subjectivity <= 0.4) box_ana += "2";
+    if (0.4 < analysis_subjectivity && analysis_subjectivity <= 0.6) box_ana += "3";
+    if (0.6 < analysis_subjectivity && analysis_subjectivity <= 0.8) box_ana += "4";
+    if (0.8 < analysis_subjectivity && analysis_subjectivity <= 1.0) box_ana += "5";
+    document.getElementById(box_ana).style.backgroundColor = "rgba(173, 216, 230, 1)";
 
-    document.getElementById(box2).style.backgroundColor = "rgba(0,255, 0, 0.75)";
-    writtenPolarity(polarity);
-    writtenSubjectivity(subjectivity);
+    if (0.0 <= evaluation_subjectivity && evaluation_subjectivity <= 0.2) box_eva += "1";
+    if (0.2 < evaluation_subjectivity && evaluation_subjectivity <= 0.4) box_eva += "2";
+    if (0.4 < evaluation_subjectivity && evaluation_subjectivity <= 0.6) box_eva += "3";
+    if (0.6 < evaluation_subjectivity && evaluation_subjectivity <= 0.8) box_eva += "4";
+    if (0.8 < evaluation_subjectivity && evaluation_subjectivity <= 1.0) box_eva += "5";
+    box_eva += "_2";
+    document.getElementById(box_eva).style.backgroundColor = "rgba(173, 216, 230, 1)";
+
+    if (-1.0 <= analysis_polarity && analysis_polarity <= -0.6) box2_ana += "1";
+    if (-0.6 < analysis_polarity && analysis_polarity <= -0.2) box2_ana += "2";
+    if (-0.2 < analysis_polarity && analysis_polarity <= 0.2) box2_ana += "3";
+    if (0.2 < analysis_polarity && analysis_polarity <= 0.6) box2_ana += "4";
+    if (0.6 < analysis_polarity && analysis_polarity <= 1.0) box2_ana += "5";
+
+    document.getElementById(box2_ana).style.backgroundColor = "rgba(173, 216, 230, 1)";
+
+    if (-1.0 <= evaluation_polarity && evaluation_polarity <= -0.6) box2_eva += "1";
+    if (-0.6 < evaluation_polarity && evaluation_polarity <= -0.2) box2_eva += "2";
+    if (-0.2 < evaluation_polarity && evaluation_polarity <= 0.2) box2_eva += "3";
+    if (0.2 < evaluation_polarity && evaluation_polarity <= 0.6) box2_eva += "4";
+    if (0.6 < evaluation_polarity && evaluation_polarity <= 1.0) box2_eva += "5";
+    box2_eva += "_2";
+    document.getElementById(box2_eva).style.backgroundColor = "rgba(173, 216, 230, 1)";
 
     document.getElementById("open-feedback-button").style.display = 'none';
     document.getElementById("open-Detail-button").style.display = 'none';
+    document.getElementById("open-insights-button").style.display = 'none';
     document.getElementById("open-help-button").style.display = 'none';
     document.getElementById("close-help-button").style.display = 'none';
     document.getElementById("scrollbox").style.display = 'none';
@@ -611,7 +665,7 @@ function computeDashboard(subjectivity, polarity, userText, sentences, addOnClic
 
     Swal({
         title: 'Ihr Dashboard ist fertig!',
-        text: 'Sie können sich nun die Analyseergebnisse ansehen. Dies ist der letzte Bildschirm. Um den Prozess erneut zu starten, können Sie nach unten scrollen und zur Einleitung zurückkehren!',
+        text: 'Sie können nun die Analyseergebnisse einsehen. Dies ist der letzte Bildschirm. Um den Prozess erneut zu starten, können Sie nach unten blättern und zur Einleitung zurückkehren!',
         icon: 'success',
         confirmButtonText: 'Ergebnisse anzeigen',
         confirmButtonColor: '#00762C'
@@ -619,55 +673,3 @@ function computeDashboard(subjectivity, polarity, userText, sentences, addOnClic
 }
 
 export {computeDashboard}
-
-/**
- * Computes the displayed text based on the polarity of the essay
- *
- * @param polarity
- *          polarity of the essay
- */
-function writtenPolarity(polarity) {
-    let result;
-    if (-1.0 <= polarity && polarity <= -0.6) {
-        result = "Ihr Text ist sehr negativ geschrieben. Es scheint so, als ob Ihr Text viele negative Begriffe enthält und deshalb in diesen Abschnitt eingeordnet wird."
-    }
-    if (-0.6 < polarity && polarity <= -0.2) {
-        result = "Ihr Text ist negativ geschrieben. Es scheint, als ob Ihr Text einige negative Begriffe enthält und deshalb in diesen Abschnitt eingeordnet wird."
-    }
-    if (-0.2 < polarity && polarity <= 0.2) {
-        result = "Ihr Text ist neutral geschrieben. Es gibt keine Extreme in Bezug auf Positivität oder Negativität."
-    }
-    if (0.2 < polarity && polarity <= 0.6) {
-        result = "Ihr Text ist positiv geschrieben. Es scheint, dass Ihr Text einige positive Begriffe enthält und daher in diesen Bereich eingeordnet wird."
-    }
-    if (0.6 < polarity && polarity <= 1.0) {
-        result = "Ihr Text ist sehr positiv geschrieben. Es scheint, als ob Ihr Text viele positive Begriffe enthält und deshalb in diesen Abschnitt eingeordnet wird."
-    }
-    document.getElementById("writtenPolarity").innerText = result;
-}
-
-/**
- * Computes the displayed text based on the subjectivity of the essay
- *
- * @param subjectivity
- *          subjectivity of the essay
- */
-function writtenSubjectivity(subjectivity) {
-    let result; //0 very objective/1 very subjective
-    if (0.0 <= subjectivity && subjectivity <= 0.2) {
-        result = "Ihr Text ist sehr objektiv geschrieben. Das bedeutet, dass Sie einen Text verfasst haben, der fast keine persönlichen Meinungen enthält, sondern viele faktenbasierte Informationen."
-    }
-    if (0.2 < subjectivity && subjectivity <= 0.4) {
-        result = "Ihr Text ist objektiv geschrieben. Das bedeutet, dass Sie einen Text verfasst haben, der wenige persönliche Meinungen, aber mehr sachliche Informationen enthält."
-    }
-    if (0.4 < subjectivity && subjectivity <= 0.6) {
-        result = "Ihr Text enthält einige subjektive Elemente. Das bedeutet, dass Sie einen Text geschrieben haben, der einige persönliche Meinungen, aber auch einige sachliche Informationen enthält."
-    }
-    if (0.6 < subjectivity && subjectivity <= 0.8) {
-        result = "Ihr Text enthält einige stark subjektive Elemente, d.h. Sie haben ein gewisses Maß an subjektiver Meinung und weniger faktenbasierte Informationen in Ihren Text eingebaut."
-    }
-    if (0.8 < subjectivity && subjectivity <= 1.0) {
-        result = "Ihr Text enthält eine Menge subjektiver Elemente. Das bedeutet, dass Sie eine Menge subjektiver Meinungen in Ihren Text eingebaut haben und fast keine faktenbasierten Informationen."
-    }
-    document.getElementById("writtenSubjectivity").innerText = result;
-}

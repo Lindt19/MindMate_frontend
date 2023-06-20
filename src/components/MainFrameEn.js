@@ -25,7 +25,7 @@ import {
     showOpenFeedbackButton,
     showPrivacy,
     submitMessage
-} from "../static/javascript/ArgueTutorEn";
+} from "../static/javascript/MindMateEn";
 
 import { v4 as uuidv4 } from 'uuid'
 
@@ -155,10 +155,6 @@ class MainFrameEn extends React.Component {
         ready(() => {
             // The following is meant for the login:
             let userName = "";
-            // while (!(new RegExp('[a-zA-Z0-9\b]{4}-rdexp$')).test(userName)) {
-            //     userName = prompt("Please enter your code :");
-            // }
-
             showPrivacy()
         });
     }
@@ -288,16 +284,6 @@ class MainFrameEn extends React.Component {
     }
 
     chatGPT = async () => {
-        // if active reset to predefined bot (red)
-        /*
-        if (this.state.chatGPTColor) {
-            document.documentElement.style.setProperty("--main-color", "#b51f1f")
-            // show instructions about using normal bot
-        } else {
-            document.documentElement.style.setProperty("--main-color", "#35BC55")
-            // show instructions about using chatgpt bot
-        }
-         */
         await this.setState({chatGPTColor: !this.state.chatGPTColor})
         initializeBot(this.updateChatBoxContent, this.state.chatGPTColor, UUID)
     }
@@ -520,22 +506,15 @@ class MainFrameEn extends React.Component {
         }
 
         /**
-         * handels close Detail (FAQ) button click
+         * handles close Detail (FAQ) button click
          */
         const closeDetailButtonClick = () => {
             hideDetail();
         }
-        /**
-         * handles detail button click (FAQ)
-         */
-        const insightsButtonClick = () => {
-            hideChat();
 
-            document.getElementById("close-insights-button").style.display = '';
-        }
 
         /**
-         * handels close Detail (FAQ) button click
+         * handles close Detail (FAQ) button click
          */
         const closeInsightsButtonClick = () => {
             hideInsights();
@@ -749,7 +728,6 @@ class MainFrameEn extends React.Component {
                 let evaluation_subjectivity = data.evaluation_subjectivity;
                 let plan_future_tense = data.plan_future_tense;
                 let text = data.text;
-                let first_person_count = data.first_person_count;
 
                 // Create the chart
                 //this.setState({chartData: emotions.map(e => Math.round(Number((e.score * 100))))});
@@ -772,13 +750,6 @@ class MainFrameEn extends React.Component {
                 else{
                     document.getElementById("emotions_text").innerHTML = "It seems that you have described some emotions. This helps you have an idea on how this experience impacted and thus enable good reflection."
                 }
-                /*
-                for (let i = 0; i < emotions.length; i++) {
-                    const score = (emotions[i].score * 100).toFixed(2);
-                    document.getElementById(emotions[i].label).value = score;
-                    document.getElementById(emotions[i].label).title = "On a scale from not at all appropriate (0%) to very appropriate (100%), this text is: " + score + "%";
-                }
-                 */
 
                 let adaptedText = text.replaceAll("\\n", "\n");
                 if(context_past_tense <= 0){
@@ -895,7 +866,6 @@ class MainFrameEn extends React.Component {
                 let evaluation_subjectivity = data.evaluation_subjectivity;
                 let plan_future_tense = data.plan_future_tense;
                 let text = data.text;
-                let first_person_count = data.first_person_count;
 
                 let adaptedText = text.replaceAll("\\n", "\n");
                 if(adaptedText.length <= 0){
@@ -1265,50 +1235,7 @@ class MainFrameEn extends React.Component {
                                                             style={{fontSize: "large", marginBottom: 30}}
                                                             id="emotions_text"
                                                         />
-                                                        {/*
-                                                        <progress className={"progress"} id="neutral"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
-                                                                  max="100" value="90"
-                                                                  style={{content:"hello"}}>
-                                                        </progress>
-                                                        <div className="progressbarText">{"Neutral"}</div>
 
-                                                        <progress className={"progress"} id="disgust"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Disgust"}</div>
-
-                                                        <progress className={"progress"} id="sadness"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Sadness"}</div>
-
-                                                        <progress className={"progress"} id="fear"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Fear"}</div>
-
-                                                        <progress className={"progress"} id="anger"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Anger"}</div>
-
-                                                        <progress className={"progress"} id="surprise"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Surprise"}</div>
-
-                                                        <progress className={"progress"} id="joy"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Joy"}</div>
-                                                        */}
                                                         <h4 className="my-2"> Analysis </h4>
                                                         <div
                                                             className="text-black-50"
@@ -1528,291 +1455,7 @@ class MainFrameEn extends React.Component {
                                                             style={{fontSize: "large", marginBottom: 30}}
                                                             id="plan_future_tense"
                                                         />
-                                                        {/*
-                                                        <h4 className="my-2"> Subjectivity/Objectivity of introduction </h4>
-                                                        <progress className={"progress"} id="subjectivityBar"
-                                                                  title={"On a scale from very objective (0%) to very subjective (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div
-                                                            className="row w-100 text-center mx-auto mt-2"
-                                                            style={{marginBottom: 15}}
-                                                        >
-                                                            <div
-                                                                id="s1"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very Objective
-                                                            </div>
-                                                            <div
-                                                                id="s2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Objective
-                                                            </div>
-                                                            <div
-                                                                id="s3"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Neutral
-                                                            </div>
-                                                            <div
-                                                                id="s4"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Subjective
-                                                            </div>
-                                                            <div
-                                                                id="s5"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very subjective
-                                                            </div>
-                                                        </div>
-                                                        <a href={"javascript:void(0)"}
-                                                           onClick={showSubjectivitySources}> Most influential sentences for the
-                                                            Subjectivity decision? </a>
 
-                                                        <h4 className="my-2"> Subjectivity/Objectivity of body </h4>
-                                                        <progress className={"progress"} id="subjectivityBar2"
-                                                                  title={"On a scale from very objective (0%) to very subjective (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div
-                                                            className="row w-100 text-center mx-auto mt-2"
-                                                            style={{marginBottom: 15}}
-                                                        >
-                                                            <div
-                                                                id="s1_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very Objective
-                                                            </div>
-                                                            <div
-                                                                id="s2_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Objective
-                                                            </div>
-                                                            <div
-                                                                id="s3_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Neutral
-                                                            </div>
-                                                            <div
-                                                                id="s4_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Subjective
-                                                            </div>
-                                                            <div
-                                                                id="s5_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very subjective
-                                                            </div>
-                                                        </div>
-                                                        <a href={"javascript:void(0)"}
-                                                           onClick={showSubjectivitySources}> Most influential sentences for the
-                                                            Subjectivity decision? </a>
-
-                                                        <h4 className="my-2"> Polarity of body </h4>
-                                                        <progress className={"progress"} id="polarityBar"
-                                                                  title={"On a scale from very negative (0%) to very positive (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div
-                                                            className="row w-100 text-center mx-auto mt-2"
-                                                            style={{marginBottom: 20}}
-                                                        >
-                                                            <div
-                                                                id="p1"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very Negative
-                                                            </div>
-                                                            <div
-                                                                id="p2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Negative
-                                                            </div>
-                                                            <div
-                                                                id="p3"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Neutral
-                                                            </div>
-                                                            <div
-                                                                id="p4"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Positive
-                                                            </div>
-                                                            <div
-                                                                id="p5"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very positive
-                                                            </div>
-                                                        </div>
-                                                        <a href={"javascript:void(0)"} onClick={showPolaritySources}> Most influential sentences for the polarity decision? </a>
-
-                                                        <h4 className="my-2"> Polarity of conclusion </h4>
-                                                        <progress className={"progress"} id="polarityBar_2"
-                                                                  title={"On a scale from very negative (0%) to very positive (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div
-                                                            className="row w-100 text-center mx-auto mt-2"
-                                                            style={{marginBottom: 20}}
-                                                        >
-                                                            <div
-                                                                id="p1_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very Negative
-                                                            </div>
-                                                            <div
-                                                                id="p2_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Negative
-                                                            </div>
-                                                            <div
-                                                                id="p3_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Neutral
-                                                            </div>
-                                                            <div
-                                                                id="p4_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Positive
-                                                            </div>
-                                                            <div
-                                                                id="p5_2"
-                                                                className="col-md-2 border mx-auto"
-                                                                style={{borderRadius: 10, textAlign: "center"}}
-                                                            >
-                                                                Very positive
-                                                            </div>
-                                                        </div>
-                                                        <a href={"javascript:void(0)"} onClick={showPolaritySources}> Most influential sentences for the polarity decision? </a>
-
-                                                        <h4>Emotions</h4>
-                                                        <progress className={"progress"} id="neutral"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
-                                                                  max="100" value="90"
-                                                                  style={{content:"hello"}}>
-                                                        </progress>
-                                                        <div className="progressbarText">{"Neutral"}</div>
-
-                                                        <progress className={"progress"} id="disgust"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is:"}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Disgust"}</div>
-
-                                                        <progress className={"progress"} id="sadness"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Sadness"}</div>
-
-                                                        <progress className={"progress"} id="fear"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Fear"}</div>
-
-                                                        <progress className={"progress"} id="anger"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Anger"}</div>
-
-                                                        <progress className={"progress"} id="surprise"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Surprise"}</div>
-
-                                                        <progress className={"progress"} id="joy"
-                                                                  title={"On a scale from not applicable at all (0%) to very applicable (100%), this text is: "}
-                                                                  max="100" value="90">
-                                                        </progress>
-                                                        <div className="progressbarText">{"Joy"}</div>
-                                                    </div>
-                                                    <div className="container-fluid text-center cardtwo my-4">
-                                                        <div
-                                                            id="dashboard-h2 my-2"
-                                                            style={{fontSize: "x-large"}}
-                                                        >
-                                                            Subjectivity/Objectivity of introduction{" "}
-                                                        </div>
-                                                        <div
-                                                            className="text-black-50"
-                                                            style={{fontSize: "large"}}
-                                                            id="writtenSubjectivity"
-                                                        />
-                                                        <div
-                                                            id="dashboard-h2 my-2"
-                                                            style={{fontSize: "x-large"}}
-                                                        >
-                                                            Subjectivity/Objectivity of body{" "}
-                                                        </div>
-                                                        <div
-                                                            className="text-black-50"
-                                                            style={{fontSize: "large"}}
-                                                            id="writtenSubjectivity_2"
-                                                        />
-                                                        <div
-                                                            id="dashboard-h2 my-2"
-                                                            style={{fontSize: "x-large"}}
-                                                        >
-                                                            {" "}
-                                                            Polarity of body{" "}
-                                                        </div>
-                                                        <div
-                                                            className="text-black-50"
-                                                            style={{fontSize: "large", marginBottom: 30}}
-                                                            id="writtenPolarity"
-                                                        />
-                                                        <div
-                                                            id="dashboard-h2 my-2"
-                                                            style={{fontSize: "x-large"}}
-                                                        >
-                                                            {" "}
-                                                            Tenses and pronouns{" "}
-                                                        </div>
-                                                        <div
-                                                            className="text-black-50"
-                                                            style={{fontSize: "large", marginBottom: 30}}
-                                                            id="tenses_pronouns"
-                                                        />
-                                                        */}
                                                     </div>
                                                     {/* Reload page function - getting back to the introduction.  */}
                                                     <div className="container-fluid text-center">
@@ -2082,7 +1725,6 @@ class MainFrameEn extends React.Component {
                                         name="evaluationText"
                                         id="evalution_textarea2"
                                         placeholder="What were the emotions you felt during the experience ?"
-                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
@@ -2103,7 +1745,6 @@ class MainFrameEn extends React.Component {
                                         name="evaluationText"
                                         id="evalution_textarea3"
                                         placeholder="What went well and what didn't ?"
-                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
@@ -2124,7 +1765,6 @@ class MainFrameEn extends React.Component {
                                         name="evaluationText"
                                         id="evalution_textarea4"
                                         placeholder="What insights, skills, or knowledge you have gained from it ?"
-                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
@@ -2145,7 +1785,6 @@ class MainFrameEn extends React.Component {
                                         name="evaluationText"
                                         id="evalution_textarea5"
                                         placeholder="How can you apply what you have learned to future endeavors?"
-                                        //onKeyUp={this.updateEssayStats}
                                         style={{
                                             resize: "none",
                                             borderRadius: 10,
@@ -2158,45 +1797,7 @@ class MainFrameEn extends React.Component {
                                         }}
                                         defaultValue={""}
                                     />
-                                    {/*
-                                    <section className="container" style={{maxWidth: 1000}}>
-                                        <div
-                                            className="left-half"
-                                            style={{display: "inline-block", width: "50%"}}
-                                        >
-                                            <div className="output row" style={{marginLeft: "-1rem"}}>
-                                                <div>
-                                                    Characters: <span id="characterCount">0</span>
-                                                </div>
-                                                <div>
-                                                    Words: <span id="wordCount">0</span>
-                                                </div>
-                                            </div>
-                                            <div className="output row" style={{marginLeft: "-1rem"}}>
-                                                <div>
-                                                    Sentences: <span id="sentenceCount">0</span>
-                                                </div>
-                                                <div>
-                                                    Paragraphs: <span id="paragraphCount">0</span>
-                                                </div>
-                                            </div>
-                                            <div className="output row" style={{marginLeft: "-1rem"}}>
-                                                <div>
-                                                    Reading time: <span id="readingTime">0</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div
-                                            className="right-half"
-                                            style={{display: "inline-block", width: "49%"}}
-                                        >
-                                            <div className="keywords" style={{marginRight: "-1rem"}}>
-                                                Top keywords
-                                                <ul id="topKeywords"></ul>
-                                            </div>
-                                        </div>
-                                    </section>
-                                    */}
+
                                 </div>
                             </div>
                         </form>

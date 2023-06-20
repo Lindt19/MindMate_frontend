@@ -4,7 +4,6 @@ import './static/stylesheet/style.css';
 import './static/stylesheet/normalize.css';
 import './static/stylesheet/epfl.css';
 
-import {MainFrame} from "./components/main_frame";
 import {MainFrameEn} from "./components/MainFrameDe";
 
 // If you want to start measuring performance in your app, pass a function
